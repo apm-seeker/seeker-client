@@ -89,7 +89,13 @@ entities/service/
 ### 스타일
 - Tailwind 우선. `@apply`는 `shared/ui` 내부에서만.
 - 색상은 CSS 변수 토큰(`bg-background`, `text-foreground` 등)을 사용. 하드코딩된 hex/rgb 금지.
-- 다크 모드는 `dark` 클래스 기반 (이미 설정됨).
+- **앱은 상시 다크모드**. `<html class="dark">`가 고정되어 있고 라이트 테마로 전환할 계획 없음. `dark:` prefix 쓰지 말고 토큰만 사용. `:root`의 light 토큰 블록은 shadcn 호환용으로 남겨둔 것일 뿐 실제로는 동작하지 않음.
+- **사이드바 전용 토큰**: `--sidebar`, `--sidebar-active`, `--sidebar-foreground`, `--sidebar-active-foreground`, `--sidebar-border`가 별도 존재. **사이드바 내부에서만** 사용하고, 일반 패널/카드는 `bg-card`/`bg-background` 사용.
+
+### 레이아웃
+- 화면 쉘(탑바 + 사이드바 + 메인 영역)은 `widgets/app-layout`이 단독 책임짐.
+- 페이지는 자기 콘텐츠만 렌더. **페이지에서 레이아웃·사이드바·탑바·전역 패딩 건드리지 말 것.**
+- 탑바는 최상단 전체 폭, 그 아래 왼쪽 사이드바 + 오른쪽 메인 스크롤 영역 구조.
 
 ### shadcn/ui
 - `npx shadcn@latest add <component>` 실행 시 `src/shared/ui/`에 생성됨 (components.json에 설정됨).
@@ -102,6 +108,15 @@ entities/service/
 - `npm test` — Vitest 1회 실행
 - `npm run test:watch` — Vitest watch
 - `npm run lint` / `npm run format`
+
+## 새 라우트 추가 절차
+
+1. `src/pages/<slug>-page/ui/<slug>-page.tsx` 작성 (PascalCase export, `kebab-case` 파일명).
+2. `src/pages/<slug>-page/index.ts`에 public API 배럴.
+3. `src/app/router/routes.tsx`에 라우트 등록.
+4. 사이드바에 노출해야 하면 `src/widgets/app-sidebar/model/nav-items.ts`에 항목 추가.
+
+> 사이드바와 라우터는 자동 연결되지 않음. 둘 다 손대야 메뉴로 접근 가능.
 
 ## 금지사항
 
