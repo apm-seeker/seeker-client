@@ -22,8 +22,6 @@ export const PRESETS: readonly Preset[] = [
   { key: '7d', label: '7d', durationMs: 7 * DAY },
 ]
 
-export const DEFAULT_PRESET: PresetKey = '5m'
-
 export function createPresetRange(
   key: PresetKey,
   now: Date = new Date(),
