@@ -19,7 +19,7 @@ export function DashboardPage() {
           className="shadow-lg"
         />
       </div>
-      <TopologyPanel />
+      <TopologyPanel range={range} />
       <MetricPanel />
     </div>
   )
