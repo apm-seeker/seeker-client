@@ -30,6 +30,3 @@ dist-ssr
 # Env
 .env.*
 !.env.example
-
-# MSW
-public/mockServiceWorker.js
