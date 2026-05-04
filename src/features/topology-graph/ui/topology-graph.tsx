@@ -1,7 +1,7 @@
 import { useId, useMemo, useRef, useState } from 'react'
 import { ParentSize } from '@visx/responsive'
 import type { TopologyData, AgentIdValue, NodeData } from '@/entities/topology'
-import { TopologyEdge, TopologyNode } from '@/entities/topology'
+import { TopologyEdge, TopologyNode, useTopologySelection } from '@/entities/topology'
 import { cn } from '@/shared/lib'
 import { layeredLayout } from '../lib/layered-layout'
 import { useZoomPan } from '../model/use-zoom-pan'
@@ -60,7 +60,9 @@ function TopologyGraphCanvas({
   const clipId = `topology-clip-${idBase}`
   const [hover, setHover] = useState<HoverTarget>(null)
   const [tooltipPos, setTooltipPos] = useState<TooltipPos | null>(null)
-  const [selected, setSelected] = useState<AgentIdValue | null>(null)
+  const selected = useTopologySelection((s) => s.selectedAgentId)
+  const setSelectedAgentId = useTopologySelection((s) => s.setSelectedAgentId)
+  const clearSelection = useTopologySelection((s) => s.clearSelection)
 
   const {
     positions,
@@ -92,7 +94,8 @@ function TopologyGraphCanvas({
 
   const onNodeClick = (agentId: AgentIdValue) => {
     if (consumeRecentDrag()) return
-    setSelected((prev) => (prev === agentId ? null : agentId))
+    if (agentId === selected) clearSelection()
+    else setSelectedAgentId(agentId)
   }
 
   const hoveredNode = hover?.kind === 'node' ? (nodeById.get(hover.agentId) ?? null) : null

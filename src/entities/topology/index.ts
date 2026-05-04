@@ -1,6 +1,7 @@
 export type { AgentIdValue, NodeData, EdgeData, TopologyData } from './model/types'
 export { USER_AGENT_ID } from './model/types'
 export { mockTopology } from './model/mock'
+export { useTopologySelection } from './model/selection-store'
 export { iconForAgentType } from './lib/agent-icon'
 export { TopologyNode, NODE_SIZE } from './ui/topology-node'
 export { TopologyEdge } from './ui/topology-edge'
