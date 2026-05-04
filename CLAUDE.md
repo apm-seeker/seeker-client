@@ -81,6 +81,7 @@ entities/service/
 - 폴링이 필요하면 `refetchInterval` + `refetchIntervalInBackground: false`.
 - API 응답은 **Zod로 검증**한 뒤 사용.
 - 쿼리 훅은 해당 슬라이스의 `api/`에 둔다 (예: `entities/service/api/use-services.ts`).
+- 호출은 `apiClient` 직접이 아니라 `@/shared/api`의 `request(config, schema)` 헬퍼로. **자세한 패턴은 아래 [API 호출](#api-호출) 섹션 참조.**
 
 ### 상태 관리
 - 서버 상태 → TanStack Query만 사용 (Zustand에 캐싱하지 말 것).
@@ -100,6 +101,49 @@ entities/service/
 ### shadcn/ui
 - `npx shadcn@latest add <component>` 실행 시 `src/shared/ui/`에 생성됨 (components.json에 설정됨).
 - 생성된 컴포넌트는 자유롭게 수정 가능. 업그레이드 없는 복사본임을 전제로.
+
+## API 호출
+
+### 공통 함수 (`@/shared/api`)
+- `apiClient` — axios 인스턴스. `baseURL = VITE_API_BASE_URL`. 응답 인터셉터가 axios 에러를 `ApiError`로 정규화.
+- `request<TSchema>(config, schema)` — axios 호출 + Zod 검증을 한 번에. **모든 서버 호출은 이 함수로.** `apiClient`를 직접 쓰지 말 것 (특수한 경우 빼고).
+- `ApiError` — 호출부에 axios 의존을 노출하지 않기 위한 공통 에러 타입. `status`, `code`, `cause` 보유. `useQuery.error`도 이 타입.
+
+### 표준 쿼리 훅 패턴
+
+스키마는 `api/schema.ts`, 훅은 `api/use-xxx.ts`. 응답 타입과 Zod 스키마를 1:1 동기화하기 위해 `z.ZodType<DomainType>` 어노테이션 — 드리프트 시 컴파일 에러로 즉시 발견.
+
+### 시간 파라미터
+- 백엔드 시간 필드는 항상 **UTC epoch milliseconds** (`Long`).
+- `Date`를 보낼 때는 `toEpochMs(date)` (`@/shared/lib`)을 사용. `toString()` / `toLocaleString()` / `toISOString()` 등 로컬 타임존이 섞이거나 string 직렬화로 가는 변환 금지.
+
+### 훅 인자 컨벤션
+- 훅은 상위 레이어 타입(예: `features/time-range-picker`의 `TimeRange`)을 받지 말 것 — entity가 features를 import하면 FSD 위반.
+- 백엔드 파라미터 그대로(`{ startTime: number; endTime: number }` 형태)로 받음. `Date → epoch ms` 변환은 호출부(widget 이상)에서.
+
+### URL
+- baseURL은 `request()`가 자동 prefix. 호출 시 path만(`/dashboard/topology`) 적음.
+- URL은 백엔드 컨트롤러의 `@RequestMapping` + `@GetMapping`과 **반드시 1:1**. mock(MSW)과 실서버 양쪽이 같은 URL이어야 토글이 작동.
+
+## Mock 데이터 (MSW)
+
+### 토글
+- env: `VITE_USE_MOCK=true|false`. 미설정 시 `MODE` 기반(dev=on, prod=off, fail-closed).
+- **코드는 분기하지 않음** — 항상 `request(...)`로 호출. mock/실서버 선택은 부트스트랩 시점에 한 번.
+- 변경 후 dev 서버 재시작 필요. 브라우저 콘솔의 `[MSW] Mocking enabled.` 메시지로 활성 여부 확인.
+- 배포 빌드는 CI에서 `VITE_USE_MOCK=false` 주입 필수 (커밋된 `.env`는 dev 편의를 위해 `true`).
+
+### 핸들러
+- 위치: `src/mocks/handlers/<도메인>.ts` → `handlers/index.ts`에서 합침.
+- URL은 `${env.apiBaseUrl}/...` 형태로 백엔드 명세와 **반드시 일치**. 다르면 인터셉트가 안 걸려 실 호출로 흘러감.
+- mock 데이터는 **entity의 `model/mock.ts`에서 import** — 단일 출처. 핸들러에서 새 데이터 인라인으로 만들지 말 것.
+
+새 도메인 추가 시: 핸들러 파일 작성 → `handlers/index.ts`의 `handlers` 배열에 spread로 등록.
+
+### 부트스트랩
+- 브라우저: `src/main.tsx`에서 `env.useMock`이 true일 때 `@/mocks/browser`를 **dynamic import** → `worker.start({ onUnhandledRequest: 'bypass' })`. prod 빌드는 별도 chunk로 분리되어 useMock=false면 fetch 안 됨.
+- 노드(vitest): `src/test/setup.ts`에서 `setupServer`를 항상 띄움 (`onUnhandledRequest: 'error'`). 명세 누락 시 테스트가 즉시 실패.
+- 운영 코드는 `src/mocks/`를 직접 import하지 않음 — 진입점은 `main.tsx`/`test/setup.ts`뿐.
 
 ## Scripts
 
