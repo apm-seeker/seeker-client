@@ -20,7 +20,7 @@ export function DashboardPage() {
         />
       </div>
       <TopologyPanel range={range} />
-      <MetricPanel />
+      <MetricPanel range={range} />
     </div>
   )
 }
