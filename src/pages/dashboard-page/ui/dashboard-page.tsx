@@ -5,6 +5,7 @@ import {
   type TimeRange,
 } from '@/features/time-range-picker'
 import { TopologyPanel } from '@/widgets/topology-panel'
+import { MetricPanel } from '@/widgets/metric-panel'
 
 export function DashboardPage() {
   const [range, setRange] = useState<TimeRange>(() => createPresetRange('5m'))
@@ -19,6 +20,7 @@ export function DashboardPage() {
         />
       </div>
       <TopologyPanel />
+      <MetricPanel />
     </div>
   )
 }
