@@ -77,6 +77,8 @@ export function useZoomPan(
     startClientY: number
     startState: ZoomState
     moved: boolean
+    pointerId: number
+    target: Element
   } | null>(null)
   const recentDragRef = useRef(false)
 
@@ -110,8 +112,9 @@ export function useZoomPan(
       startClientY: e.clientY,
       startState: stateRef.current,
       moved: false,
+      pointerId: e.pointerId,
+      target: e.currentTarget as Element,
     }
-    ;(e.currentTarget as Element).setPointerCapture(e.pointerId)
   }, [])
 
   const onPointerMove = useCallback(
@@ -121,6 +124,9 @@ export function useZoomPan(
       const dx = e.clientX - drag.startClientX
       const dy = e.clientY - drag.startClientY
       if (!drag.moved && Math.hypot(dx, dy) < PAN_THRESHOLD) return
+      if (!drag.moved) {
+        drag.target.setPointerCapture(drag.pointerId)
+      }
       drag.moved = true
       setState({
         x: drag.startState.x + dx,
